@@ -105,7 +105,7 @@ function getAbilityDescription(ability: AbilityResponse): string {
 // FUNCIONES PRINCIPALES
 // ============================================
 
-export async function getPokemonList(limit = 151, offset = 0): Promise<PokemonListResponse> {
+export async function getPokemonList(limit = 1025, offset = 0): Promise<PokemonListResponse> {
   const url = `${AZURE_FUNCTION_URL}?limit=${limit}&offset=${offset}`;
   console.log("🔧 Fetching Pokémon list from:", url);
 
@@ -196,7 +196,7 @@ export async function getPokemonDetails(idOrName: number | string): Promise<Poke
   };
 }
 
-export async function getPokemonBatch(limit = 151): Promise<Pokemon[]> {
+export async function getPokemonBatch(limit = 1025): Promise<Pokemon[]> {
   const url = `${AZURE_FUNCTION_URL}?limit=${limit}`;
   console.log("🔧 Fetching Pokémon batch from:", url);
 
