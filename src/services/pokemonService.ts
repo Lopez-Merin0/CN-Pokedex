@@ -10,7 +10,8 @@ import type {
   PokemonSpeciesResponse,
 } from "../types/pokemon";
 
-const API_BASE_URL = "https://pokeapi.co/api/v2";
+// import.meta.env may not be recognized by TypeScript in some setups; cast to any to avoid the type error
+const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE ?? "";
 const OFFICIAL_ARTWORK_BASE_URL = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork";
 
 export const POKEMON_TYPES = [
