@@ -1,9 +1,3 @@
-# Pokedex con PokeAPI
-
-## Desarrollador
-
-Gerardo Tsuchiya
-
 ## Descripcion
 
 Aplicacion web tipo Pokedex construida con React, Vite y TypeScript. La app consume la API publica PokeAPI para listar Pokemon, consultar informacion detallada, buscar por nombre o numero, filtrar resultados, guardar favoritos, construir un equipo y comparar estadisticas base entre dos Pokemon.
