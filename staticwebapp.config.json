@@ -1,0 +1,23 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/images/*.{png,jpg,gif}", "/css/*", "/assets/*"]
+  },
+  "mimeTypes": {
+    ".json": "application/json",
+    ".js": "application/javascript",
+    ".ts": "application/javascript",
+    ".mjs": "application/javascript"
+  },
+  "responseOverrides": {
+    "404": {
+      "rewrite": "/index.html"
+    }
+  },
+  "routes": [
+    {
+      "route": "/api/*",
+      "rewrite": "/api/{*segments}"
+    }
+  ]
+}
