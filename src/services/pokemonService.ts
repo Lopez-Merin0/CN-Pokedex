@@ -1,3 +1,4 @@
+// src/services/pokemonService.ts
 import type {
   AbilityDetail,
   AbilityResponse,
@@ -10,28 +11,17 @@ import type {
   PokemonSpeciesResponse,
 } from "../types/pokemon";
 
-const API_BASE_URL = "https://pokeapi.co/api/v2";
+// ============================================
+// CONFIGURACIÓN
+// ============================================
+const AZURE_FUNCTION_URL = "https://cn-pokedex-gneghta4dycxh8dt.eastus-01.azurewebsites.net/api/PokemonFilter";
+const POKEAPI_BASE_URL = "https://pokeapi.co/api/v2";
 const OFFICIAL_ARTWORK_BASE_URL = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork";
 
 export const POKEMON_TYPES = [
-  "normal",
-  "fire",
-  "water",
-  "grass",
-  "electric",
-  "ice",
-  "fighting",
-  "poison",
-  "ground",
-  "flying",
-  "psychic",
-  "bug",
-  "rock",
-  "ghost",
-  "dragon",
-  "dark",
-  "steel",
-  "fairy",
+  "normal", "fire", "water", "grass", "electric", "ice",
+  "fighting", "poison", "ground", "flying", "psychic", "bug",
+  "rock", "ghost", "dark", "dragon", "steel", "fairy",
 ];
 
 export const GENERATION_RANGES = {
@@ -47,13 +37,15 @@ export const GENERATION_RANGES = {
   gen9: { label: "Generation IX", min: 906, max: 1025 },
 };
 
+// ============================================
+// FUNCIONES AUXILIARES
+// ============================================
 async function fetchJson<T>(url: string): Promise<T> {
+  console.log("📡 Fetching:", url);
   const response = await fetch(url);
-
   if (!response.ok) {
     throw new Error(`Error fetching ${url}: ${response.statusText}`);
   }
-
   return (await response.json()) as T;
 }
 
@@ -64,19 +56,12 @@ function cleanApiText(text: string): string {
 function extractIdFromResourceUrl(url: string): number {
   const parts = url.split("/").filter(Boolean);
   const id = Number(parts.at(-1));
-
   return Number.isNaN(id) ? 0 : id;
 }
 
 function getEvolutionLabel(detail: EvolutionStage): string | null {
-  if (detail.minLevel) {
-    return `Lv. ${detail.minLevel}`;
-  }
-
-  if (detail.trigger) {
-    return detail.trigger.replace(/-/g, " ");
-  }
-
+  if (detail.minLevel) return `Lv. ${detail.minLevel}`;
+  if (detail.trigger) return detail.trigger.replace(/-/g, " ");
   return null;
 }
 
@@ -90,23 +75,19 @@ function flattenEvolutionChain(link: EvolutionChainLink, evolutionDetail?: Evolu
     minLevel: firstDetail?.min_level ?? evolutionDetail?.minLevel ?? null,
     trigger: firstDetail?.trigger?.name ?? evolutionDetail?.trigger ?? null,
   };
-
   return [currentStage, ...link.evolves_to.flatMap((child) => flattenEvolutionChain(child))];
 }
 
 function getEnglishDescription(species: PokemonSpeciesResponse): string {
   const preferredVersions = ["firered", "leafgreen", "ruby", "sapphire", "emerald", "x", "y"];
-
   const preferredEntry = preferredVersions
     .map((versionName) =>
       species.flavor_text_entries.find(
-        (entry) => entry.language.name === "en" && entry.version.name === versionName,
-      ),
+        (entry) => entry.language.name === "en" && entry.version.name === versionName
+      )
     )
     .find(Boolean);
-
   const fallbackEntry = species.flavor_text_entries.find((entry) => entry.language.name === "en");
-
   return cleanApiText(preferredEntry?.flavor_text ?? fallbackEntry?.flavor_text ?? "No description available yet.");
 }
 
@@ -117,93 +98,205 @@ function getEnglishCategory(species: PokemonSpeciesResponse): string {
 function getAbilityDescription(ability: AbilityResponse): string {
   const effectEntry = ability.effect_entries.find((entry) => entry.language.name === "en");
   const flavorEntry = ability.flavor_text_entries.find((entry) => entry.language.name === "en");
-
   return cleanApiText(effectEntry?.short_effect ?? flavorEntry?.flavor_text ?? "No description available.");
 }
 
-export async function getPokemonList(limit = 251): Promise<PokemonListResponse> {
-  return fetchJson<PokemonListResponse>(`${API_BASE_URL}/pokemon?limit=${limit}`);
+// ============================================
+// FUNCIONES PRINCIPALES
+// ============================================
+
+export async function getPokemonList(limit = 151, offset = 0): Promise<PokemonListResponse> {
+  const url = `${AZURE_FUNCTION_URL}?limit=${limit}&offset=${offset}`;
+  console.log("🔧 Fetching Pokémon list from:", url);
+
+  const data = await fetchJson<any>(url);
+
+  if (data.results && Array.isArray(data.results)) {
+    return {
+      count: data.count,
+      next: null,
+      previous: null,
+      results: data.results.map((p: any) => ({
+        name: p.name,
+        url: `${POKEAPI_BASE_URL}/pokemon/${p.id}`
+      }))
+    };
+  }
+
+  return { count: 0, next: null, previous: null, results: [] };
 }
 
 export async function getPokemonDetails(idOrName: number | string): Promise<Pokemon> {
-  return fetchJson<Pokemon>(`${API_BASE_URL}/pokemon/${idOrName}`);
+  const url = `${AZURE_FUNCTION_URL}?name=${idOrName}`;
+  console.log("🔧 1. Fetching Pokémon details from:", url);
+
+  const data = await fetchJson<any>(url);
+  console.log("📦 2. Datos CRUDOS de tu función:", data);
+
+  // ============================================
+  // MAPEO DE STATS - FORMATO CORRECTO
+  // ============================================
+  // Tu función devuelve: stats: [{ name: "hp", value: 35 }, ...]
+  // Necesitamos: stats: [{ base_stat: 35, stat: { name: "hp" } }, ...]
+  const stats = (data.stats || []).map((s: any) => ({
+    base_stat: s.value,        // ← value → base_stat
+    effort: 0,
+    stat: {
+      name: s.name,            // ← name dentro de stat
+      url: `${POKEAPI_BASE_URL}/stat/${s.name}`
+    }
+  }));
+
+  // ============================================
+  // MAPEO DE ABILITIES - FORMATO CORRECTO
+  // ============================================
+  const abilities = (data.abilities || []).map((ability: any, index: number) => {
+    let abilityName = "";
+    if (typeof ability === 'string') {
+      abilityName = ability;
+    } else if (ability && typeof ability === 'object') {
+      abilityName = ability.name || (ability as any).ability?.name || "";
+    } else {
+      abilityName = String(ability);
+    }
+
+    return {
+      ability: {
+        name: abilityName,
+        url: `${POKEAPI_BASE_URL}/ability/${abilityName}`
+      },
+      is_hidden: false,
+      slot: index + 1
+    };
+  });
+
+  console.log("📊 3. Stats formateadas:", stats);
+  console.log("💪 4. Abilities formateadas:", abilities);
+
+  return {
+    id: data.id,
+    name: data.name,
+    base_experience: data.base_experience || 0,
+    height: data.height || 0,
+    weight: data.weight || 0,
+    types: (data.types || []).map((typeName: string, index: number) => ({
+      slot: index + 1,
+      type: { name: typeName, url: `${POKEAPI_BASE_URL}/type/${typeName}` }
+    })),
+    abilities: abilities,
+    stats: stats,  // ← Stats correctamente formateadas
+    sprites: {
+      front_default: data.image,
+      other: {
+        "official-artwork": {
+          front_default: data.image
+        }
+      }
+    }
+  };
 }
 
+export async function getPokemonBatch(limit = 151): Promise<Pokemon[]> {
+  const url = `${AZURE_FUNCTION_URL}?limit=${limit}`;
+  console.log("🔧 Fetching Pokémon batch from:", url);
+
+  const data = await fetchJson<any>(url);
+
+  if (data.results && Array.isArray(data.results)) {
+    return data.results.map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      base_experience: 0,
+      height: p.height || 0,
+      weight: p.weight || 0,
+      types: (p.types || []).map((typeName: string, index: number) => ({
+        slot: index + 1,
+        type: { name: typeName, url: `${POKEAPI_BASE_URL}/type/${typeName}` }
+      })),
+      abilities: [],
+      stats: [],
+      sprites: {
+        front_default: p.sprite,
+        other: {
+          "official-artwork": {
+            front_default: p.sprite
+          }
+        }
+      }
+    }));
+  }
+
+  return [];
+}
+
+// ============================================
+// FUNCIONES PARA DETALLES EXTRA
+// ============================================
+
 export async function getPokemonSpecies(idOrName: number | string): Promise<PokemonSpeciesResponse> {
-  return fetchJson<PokemonSpeciesResponse>(`${API_BASE_URL}/pokemon-species/${idOrName}`);
+  return fetchJson<PokemonSpeciesResponse>(`${POKEAPI_BASE_URL}/pokemon-species/${idOrName}`);
 }
 
 export async function getAbilityDetails(name: string): Promise<AbilityResponse> {
-  return fetchJson<AbilityResponse>(`${API_BASE_URL}/ability/${name}`);
+  return fetchJson<AbilityResponse>(`${POKEAPI_BASE_URL}/ability/${name}`);
 }
 
 export async function getEvolutionChainByUrl(url: string): Promise<EvolutionChainResponse> {
   return fetchJson<EvolutionChainResponse>(url);
 }
 
-async function mapWithConcurrency<T, R>(items: T[], concurrency: number, mapper: (item: T) => Promise<R>): Promise<R[]> {
-  const results: R[] = [];
-  let nextIndex = 0;
-
-  async function worker() {
-    while (nextIndex < items.length) {
-      const currentIndex = nextIndex;
-      nextIndex += 1;
-      results[currentIndex] = await mapper(items[currentIndex]);
-    }
-  }
-
-  const workerCount = Math.min(concurrency, items.length);
-  await Promise.all(Array.from({ length: workerCount }, () => worker()));
-
-  return results;
-}
-
-export async function getPokemonBatch(limit = 1025): Promise<Pokemon[]> {
-  const list = await getPokemonList(limit);
-  const details = await mapWithConcurrency(list.results, 24, (pokemon) => getPokemonDetails(pokemon.name));
-  return details.sort((a, b) => a.id - b.id);
-}
-
 export async function getPokemonExtraDetails(pokemon: Pokemon): Promise<PokemonExtraDetails> {
   const species = await getPokemonSpecies(pokemon.id);
 
   const abilityResults = await Promise.allSettled(
-    pokemon.abilities.map(async ({ ability, is_hidden }): Promise<AbilityDetail> => {
-      const abilityDetails = await getAbilityDetails(ability.name);
-
-      return {
-        name: ability.name,
-        description: getAbilityDescription(abilityDetails),
-        isHidden: is_hidden,
-      };
-    }),
+    (pokemon.abilities || []).map(async ({ ability, is_hidden }): Promise<AbilityDetail> => {
+      try {
+        const abilityDetails = await getAbilityDetails(ability.name);
+        return {
+          name: ability.name,
+          description: getAbilityDescription(abilityDetails),
+          isHidden: is_hidden,
+        };
+      } catch (error) {
+        console.error(`Error fetching ability ${ability.name}:`, error);
+        return {
+          name: ability.name,
+          description: "No description available.",
+          isHidden: is_hidden,
+        };
+      }
+    })
   );
 
-  const abilities = abilityResults.map((result, index) => {
-    if (result.status === "fulfilled") {
-      return result.value;
-    }
-
-    const fallbackAbility = pokemon.abilities[index];
-
+  const abilities = abilityResults.map((result) => {
+    if (result.status === "fulfilled") return result.value;
     return {
-      name: fallbackAbility.ability.name,
+      name: "unknown",
       description: "No description available.",
-      isHidden: fallbackAbility.is_hidden,
+      isHidden: false,
     };
   });
 
-  const evolutionChain = await getEvolutionChainByUrl(species.evolution_chain.url);
-  const evolutions = flattenEvolutionChain(evolutionChain.chain).map((stage) => ({
-    ...stage,
-    trigger: getEvolutionLabel(stage),
-  }));
+  try {
+    const evolutionChain = await getEvolutionChainByUrl(species.evolution_chain.url);
+    const evolutions = flattenEvolutionChain(evolutionChain.chain).map((stage) => ({
+      ...stage,
+      trigger: getEvolutionLabel(stage),
+    }));
 
-  return {
-    description: getEnglishDescription(species),
-    category: getEnglishCategory(species),
-    abilities,
-    evolutions,
-  };
+    return {
+      description: getEnglishDescription(species),
+      category: getEnglishCategory(species),
+      abilities,
+      evolutions,
+    };
+  } catch (error) {
+    console.error("Error fetching evolution chain:", error);
+    return {
+      description: getEnglishDescription(species),
+      category: getEnglishCategory(species),
+      abilities,
+      evolutions: [],
+    };
+  }
 }
