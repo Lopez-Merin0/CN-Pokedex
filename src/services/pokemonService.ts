@@ -146,12 +146,9 @@ export async function getPokemonDetails(idOrName: number | string): Promise<Poke
   return {
     id: data.id,
     name: data.name,
-    base_experience: 0,  // Campo requerido, ponemos 0
+    base_experience: 0,
     height: data.height || 0,
     weight: data.weight || 0,
-    is_default: true,
-    order: data.id,
-    location_area_encounters: "",
     types: (data.types || []).map((t: string, index: number) => ({
       slot: index + 1,
       type: { name: t, url: `${POKEAPI_BASE_URL}/type/${t}` }
@@ -174,21 +171,10 @@ export async function getPokemonDetails(idOrName: number | string): Promise<Poke
       back_shiny: null,
       other: {
         "official-artwork": {
-          front_default: data.image || data.sprite,
-          front_shiny: null
+          front_default: data.image || data.sprite
         }
-      },
-      versions: {}
-    },
-    species: {
-      name: data.name,
-      url: `${POKEAPI_BASE_URL}/pokemon-species/${data.id}`
-    },
-    game_indices: [],
-    held_items: [],
-    moves: [],
-    past_types: [],
-    cries: { latest: "", legacy: "" }
+      }
+    }
   };
 }
 
@@ -210,9 +196,6 @@ export async function getPokemonBatch(limit = 151): Promise<Pokemon[]> {
       base_experience: 0,
       height: p.height || 0,
       weight: p.weight || 0,
-      is_default: true,
-      order: p.id,
-      location_area_encounters: "",
       types: (p.types || []).map((t: string, index: number) => ({
         slot: index + 1,
         type: { name: t, url: `${POKEAPI_BASE_URL}/type/${t}` }
@@ -224,15 +207,8 @@ export async function getPokemonBatch(limit = 151): Promise<Pokemon[]> {
         front_shiny: null,
         back_default: null,
         back_shiny: null,
-        other: { "official-artwork": { front_default: p.sprite, front_shiny: null } },
-        versions: {}
-      },
-      species: { name: p.name, url: `${POKEAPI_BASE_URL}/pokemon-species/${p.id}` },
-      game_indices: [],
-      held_items: [],
-      moves: [],
-      past_types: [],
-      cries: { latest: "", legacy: "" }
+        other: { "official-artwork": { front_default: p.sprite } }
+      }
     } as Pokemon));
   }
   
