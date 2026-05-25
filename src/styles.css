@@ -2846,7 +2846,7 @@ select,
 :root[data-theme="dark"] .brand strong,
 :root[data-theme="dark"] .team-slot--filled,
 :root[data-theme="dark"] .compare-slot--filled {
-  color: var(--text);
+  color: #172033;
 }
 
 :root[data-theme="dark"] .pokemon-number,
