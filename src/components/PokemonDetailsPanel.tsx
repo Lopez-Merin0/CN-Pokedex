@@ -1,4 +1,5 @@
 // src/components/PokemonDetailsPanel.tsx
+import { useEffect } from 'react';
 import usePokemonExtraDetails from "../hooks/usePokemonExtraDetails";
 import type { AbilityDetail, Pokemon } from "../types/pokemon";
 import {
@@ -10,6 +11,7 @@ import {
 } from "../utils/pokemonFormat";
 import EvolutionChain from "./EvolutionChain";
 import StatBar from "./StatBar";
+import { trackPokemonView } from "../utils/telemetry";
 
 interface PokemonDetailsPanelProps {
   pokemon: Pokemon | null;
@@ -53,6 +55,13 @@ function PokemonDetailsPanel({
   // Usar el Pokémon actualizado (con stats) o el original como fallback
   const displayPokemon = updatedPokemon || pokemon;
 
+  // Rastrear vista de Pokémon para Application Insights
+  useEffect(() => {
+    if (displayPokemon) {
+      trackPokemonView(displayPokemon.id, displayPokemon.name);
+    }
+  }, [displayPokemon]);
+
   if (!displayPokemon) {
     return null;
   }
@@ -77,6 +86,7 @@ function PokemonDetailsPanel({
 
   return (
     <section className={`details-panel card-surface details-panel--visible details-panel--${primaryType}`} id="details">
+      {/* Botón cerrar */}
       <button
         className="icon-button details-panel__close details-panel__close--corner"
         type="button"
@@ -86,6 +96,7 @@ function PokemonDetailsPanel({
         ×
       </button>
 
+      {/* Botón favorito */}
       <button
         className={`icon-button favorite-button details-panel__favorite ${isFavorite ? "favorite-button--active" : ""}`}
         type="button"
@@ -95,6 +106,7 @@ function PokemonDetailsPanel({
         {isFavorite ? "♥" : "♡"}
       </button>
 
+      {/* Main content: identidad + imagen */}
       <div className="details-panel__main">
         <div className="details-panel__identity">
           <span className="pokemon-number">{padPokemonId(displayPokemon.id)}</span>
@@ -114,11 +126,13 @@ function PokemonDetailsPanel({
         </div>
       </div>
 
+      {/* Descripción */}
       <p className="details-panel__description">{description}</p>
 
+      {/* Error warning */}
       {extraDetailsError && <p className="details-panel__warning">Extra details could not be loaded. Showing available data.</p>}
 
-      {/* Métricas con altura y peso formateados a 2 decimales */}
+      {/* Métricas: altura, peso, categoría */}
       <div className="details-metrics">
         <span>
           <small>Height</small>
@@ -134,6 +148,7 @@ function PokemonDetailsPanel({
         </span>
       </div>
 
+      {/* Botones de acción */}
       <div className="details-actions">
         <button className="primary-button" type="button" onClick={() => onAddToTeam(displayPokemon)}>
           Add to team
@@ -143,7 +158,9 @@ function PokemonDetailsPanel({
         </button>
       </div>
 
+      {/* Grid de stats y abilities */}
       <div className="details-panel__info-grid">
+        {/* Sección de Stats */}
         <section className="details-subcard">
           <div className="details-subcard__heading">
             <h3>Stats</h3>
@@ -174,6 +191,7 @@ function PokemonDetailsPanel({
           </div>
         </section>
 
+        {/* Sección de Abilities */}
         <section className="details-subcard abilities-box">
           <div className="details-subcard__heading">
             <h3>Abilities</h3>
@@ -189,6 +207,7 @@ function PokemonDetailsPanel({
         </section>
       </div>
 
+      {/* Cadena evolutiva */}
       <EvolutionChain evolutions={extraDetails?.evolutions ?? []} loading={loadingExtraDetails} />
     </section>
   );
