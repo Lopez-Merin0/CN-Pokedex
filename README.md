@@ -14,11 +14,37 @@ El proyecto corresponde a la actividad de Aplicaciones Web y Aplicaciones Movile
 - localStorage
 - CSS responsive
 - pnpm
+- Azure Static Web Apps
+- Azure Functions
+- Azure Application Insights
 
 ## API utilizada
 
 - PokeAPI: https://pokeapi.co/api/v2
 - Documentacion oficial: https://pokeapi.co/docs/v2
+
+## Servicios en la nube (Azure)
+
+### Azure Static Web Apps
+- Alojamiento de la aplicación React con despliegue continuo desde GitHub
+- CDN global y SSL automático
+- Integración con GitHub Actions para CI/CD
+
+### Azure Functions
+- API personalizada que actúa como proxy/filtro de PokeAPI
+- Reduce el payload de datos devolviendo solo los campos necesarios
+- Endpoints:
+  - `GET /api/PokemonFilter?limit={limite}` - Listado de Pokémon
+  - `GET /api/PokemonFilter?name={nombre}` - Detalle de Pokémon específico
+
+### Azure Application Insights
+- Monitoreo de rendimiento y analíticas de uso
+- Tracking de eventos personalizados:
+  - `PokemonViewed` - Vistas de Pokémon
+  - `SearchPerformed` - Búsquedas realizadas
+  - `FilterUsed` - Filtros aplicados
+  - `AddedToTeam` - Pokémon agregados al equipo
+  - `PokemonCompared` - Comparaciones entre Pokémon
 
 ## Instalacion
 
@@ -102,6 +128,8 @@ pnpm preview
 | RT06 | Commits claros y progresivos | Completado |
 | RT07 | Interfaz responsive | Completado |
 | RT08 | Logica separada por archivos y responsabilidades | Completado |
+| CL01 | Uso de al menos 2 servicios cloud (Azure) | Completado |
+| CL02 | Integracion de Application Insights para analiticas | Completado |
 
 ## Estructura del proyecto
 
@@ -153,38 +181,16 @@ Las evidencias visuales se encuentran en la carpeta `screenshots/`.
   - Solucion: se separo esa logica en el hook `usePokemonFilters`.
 - Algunas peticiones secundarias pueden fallar.
   - Solucion: la app mantiene el detalle basico disponible y muestra estados de carga, error o informacion parcial.
-
-## Correcciones recientes
-
-- Fecha: 24-05-2026 — Correcciones aplicadas para resolver errores de compilación TypeScript y mejorar compatibilidad.
-  - Se eliminó la referencia explícita a `vite/client` en `tsconfig.app.json` para evitar errores de definición de tipos.
-  - Se ajustaron las formas de los objetos `sprites` en `src/services/pokemonService.ts` para que coincidan con las interfaces de TypeScript.
-  - Se recortaron las propiedades devueltas por `getPokemonDetails` y `getPokemonBatch` para cumplir con la interfaz `Pokemon`.
-  - Se instaló el conjunto de dependencias del proyecto (`npm install` / `pnpm install`) para permitir comprobaciones y ejecución en desarrollo.
-
-### Cómo comprobar tipos y ejecutar en desarrollo
-
-Instalar dependencias (elige uno):
-
-```bash
-pnpm install
-# o
-npm install
-```
-
-Comprobación de tipos (TypeScript):
-
-```bash
-npx tsc -b
-```
-
-Ejecutar servidor de desarrollo:
-
-```bash
-pnpm dev
-# o
-npm run dev
-```
+ 
+  ### Servicios en la nube (Azure)
+- **Error CORS al conectar frontend con Azure Functions.**
+  - Solucion: Configuracion de CORS en Azure Portal agregando los origenes permitidos.
+- **Archivos JavaScript servidos con MIME type incorrecto.**
+  - Solucion: Creacion de archivo `staticwebapp.config.json` con configuracion de MIME types.
+- **Datos de stats y habilidades no se mostraban inicialmente.**
+  - Solucion: Correccion del mapeo de datos en el servicio de API y uso de estado actualizado.
+- **Altura y peso con muchos decimales.**
+  - Solucion: Formateo con `.toFixed(2)` para mostrar solo 2 decimales.
 
 ## Flujo sugerido para la demo
 
@@ -197,18 +203,17 @@ npm run dev
 7. Cambiar entre modo claro y oscuro.
 8. Mostrar la responsividad reduciendo el ancho de pantalla.
 
-## Historial resumido de commits
 
-| Hash | Mensaje |
-| --- | --- |
-| `b1ded85` | feat(data): ampliar consumo de PokeAPI |
-| `8ad9f8e` | refactor(ui): separar tarjetas y listado |
-| `65f5bde` | feat(filters): agregar busqueda filtros y paginacion |
-| `62ed1fe` | feat(collections): agregar favoritos y equipo |
-| `3edcaea` | feat(details): enriquecer panel de detalle |
-| `8f41889` | feat(compare): agregar comparador de estadisticas |
-| `4ca39a6` | feat(app): integrar experiencia completa |
-| `96cb83f` | docs: actualizar avance y uso del proyecto |
+### Eventos monitoreados con Application Insights
+
+| Evento | Descripcion |
+|--------|-------------|
+| `PokemonViewed` | Cada vez que un usuario ve el detalle de un Pokemon |
+| `SearchPerformed` | Busquedas realizadas por el usuario |
+| `FilterUsed` | Filtros aplicados (tipo, generacion) |
+| `AddedToTeam` | Pokemon agregados al equipo |
+| `PokemonCompared` | Comparaciones entre Pokemon |
+
 
 ## Fuentes de referencia
 
@@ -216,3 +221,20 @@ npm run dev
 - PokeAPI: https://pokeapi.co/
 - React: https://react.dev/
 - Vite: https://vite.dev/
+- Azure Static Web Apps: https://azure.microsoft.com/services/app-service/static/
+- Azure Functions: https://azure.microsoft.com/services/functions/
+- Application Insights: https://learn.microsoft.com/azure/azure-monitor/app/app-insights-overview
+
+## Despliegue en Azure
+
+URL de la aplicacion desplegada: https://green-forest-07026e00f.7.azurestaticapps.net/
+
+## Fuentes de referencia
+
+- PokeAPI Docs: https://pokeapi.co/docs/v2
+- PokeAPI: https://pokeapi.co/
+- React: https://react.dev/
+- Vite: https://vite.dev/
+- Azure Static Web Apps: https://azure.microsoft.com/services/app-service/static/
+- Azure Functions: https://azure.microsoft.com/services/functions/
+- Application Insights: https://learn.microsoft.com/azure/azure-monitor/app/app-insights-overview
