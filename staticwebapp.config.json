@@ -1,23 +1,12 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/images/*.{png,jpg,gif}", "/css/*", "/assets/*"]
+    "exclude": ["/assets/*.{js,css,json,ico,png,svg,jpg,jpeg,gif,webp,woff,woff2,ttf,eot,webmanifest}"]
   },
   "mimeTypes": {
-    ".json": "application/json",
     ".js": "application/javascript",
-    ".ts": "application/javascript",
-    ".mjs": "application/javascript"
-  },
-  "responseOverrides": {
-    "404": {
-      "rewrite": "/index.html"
-    }
-  },
-  "routes": [
-    {
-      "route": "/api/*",
-      "rewrite": "/api/{*segments}"
-    }
-  ]
+    ".mjs": "application/javascript",
+    ".css": "text/css",
+    ".json": "application/json"
+  }
 }
