@@ -154,6 +154,38 @@ Las evidencias visuales se encuentran en la carpeta `screenshots/`.
 - Algunas peticiones secundarias pueden fallar.
   - Solucion: la app mantiene el detalle basico disponible y muestra estados de carga, error o informacion parcial.
 
+## Correcciones recientes
+
+- Fecha: 24-05-2026 — Correcciones aplicadas para resolver errores de compilación TypeScript y mejorar compatibilidad.
+  - Se eliminó la referencia explícita a `vite/client` en `tsconfig.app.json` para evitar errores de definición de tipos.
+  - Se ajustaron las formas de los objetos `sprites` en `src/services/pokemonService.ts` para que coincidan con las interfaces de TypeScript.
+  - Se recortaron las propiedades devueltas por `getPokemonDetails` y `getPokemonBatch` para cumplir con la interfaz `Pokemon`.
+  - Se instaló el conjunto de dependencias del proyecto (`npm install` / `pnpm install`) para permitir comprobaciones y ejecución en desarrollo.
+
+### Cómo comprobar tipos y ejecutar en desarrollo
+
+Instalar dependencias (elige uno):
+
+```bash
+pnpm install
+# o
+npm install
+```
+
+Comprobación de tipos (TypeScript):
+
+```bash
+npx tsc -b
+```
+
+Ejecutar servidor de desarrollo:
+
+```bash
+pnpm dev
+# o
+npm run dev
+```
+
 ## Flujo sugerido para la demo
 
 1. Abrir la aplicacion y mostrar el listado principal.
